@@ -49,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
     String[] deviceNameArray;
     WifiP2pDevice[] deviceArray;
 
+    //WifiDirectAutoAccept wifiDirectAutoAccept;
+
 
     static final int MESSAGE_READ = 1;
 
@@ -87,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
         read_msg_box = findViewById(R.id.readMsg);
         writeMsg = findViewById(R.id.writeMsg);
         connectionStatus = findViewById(R.id.connectionStatus);
+
+
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
@@ -137,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
                 final WifiP2pDevice device = deviceArray[i];
                 WifiP2pConfig config = new WifiP2pConfig();
                 config.deviceAddress = device.deviceAddress;
-
+                //wifiDirectAutoAccept = new WifiDirectAutoAccept(this, mManager, mChannel);
                 mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
                     @Override
                     public void onSuccess() {
@@ -193,8 +197,8 @@ public class MainActivity extends AppCompatActivity {
             final InetAddress groupOwnerAddress = wifiP2pInfo.groupOwnerAddress;
             if(wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner){
                 connectionStatus.setText("Host");
-                serverClass.start();
                 serverClass = new ServerClass();
+                serverClass.start();
             }else if(wifiP2pInfo.groupFormed){
                 connectionStatus.setText("Client");
                 clientClass = new ClientClass(groupOwnerAddress);
