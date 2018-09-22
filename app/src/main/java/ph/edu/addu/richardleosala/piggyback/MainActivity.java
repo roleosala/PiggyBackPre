@@ -132,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
                     setDevName(edittext.getText().toString());
                 }else {
                     Toast.makeText(MainActivity.this, "Must be 11 digits", Toast.LENGTH_LONG).show();
+                    btnDiscover.performClick();
                     checkDevName();
                 }
             }
@@ -170,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
         writeMsg = findViewById(R.id.writeMsg);
         connectionStatus = findViewById(R.id.connectionStatus);
         recipient = findViewById(R.id.recipient);
-        //btnDiscover.performClick();
+        btnDiscover.performClick(); // Start Activity, also Start Discovery
 
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -239,15 +240,39 @@ public class MainActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final String msg = writeMsg.getText().toString();
-                /*boolean en = checkWifi.checked();
-                if(en == false)
-                    checkWifi.turnOnWifi();*/
-                //Check if there are available devices nearby
-                sendReceive.write(msg.getBytes());
+                for(int i = 0; i < deviceNameArray.length; i++){
+                    if(deviceNameArray[i].contains(recipient.getText().toString())){
+                        //Toast.makeText(MainActivity.this, "Has Recipient", Toast.LENGTH_SHORT).show();
+                        mConnect(i);
+                        Handler handler = new Handler();
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                String msg = writeMsg.getText().toString();
+                                sendReceive.write(msg.getBytes());
+                                myDb.addToTEXT(msg, recipient.getText().toString());
+                            }
+                        }, 5000);
+                        break;
+                        //Broadcasting nalang part
+                    }else{
+                        Toast.makeText(MainActivity.this, "No Recipient Found. Broadcasting to nearby Devices", Toast.LENGTH_SHORT).show();
+                        bConnect();
+                        Handler handler = new Handler();
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                String msg = writeMsg.getText().toString();
+                                sendReceive.write(msg.getBytes());
+                                myDb.addToTEXT(msg, recipient.getText().toString());
+                            }
+                        }, 10000);
+                    }
+                }
             }
         });
     }
+
     //connect to a device after recipient is found
     private void mConnect(int i){
         final WifiP2pDevice device = deviceArray[i];
@@ -265,6 +290,26 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Not Connected" , Toast.LENGTH_SHORT ).show();
             }
         });
+    }
+    //Broadcast Connection
+    private void bConnect(){
+        for (int i = 0; i<deviceNameArray.length; i++){
+            final WifiP2pDevice device = deviceArray[i];
+            WifiP2pConfig config = new WifiP2pConfig();
+            config.deviceAddress = device.deviceAddress;
+            //wifiDirectAutoAccept = new WifiDirectAutoAccept(this, mManager, mChannel);
+            mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, Toast.LENGTH_SHORT ).show();
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    Toast.makeText(getApplicationContext(), "Not Connected" , Toast.LENGTH_SHORT ).show();
+                }
+            });
+        }
     }
 
     //On Click in btnDiscover
