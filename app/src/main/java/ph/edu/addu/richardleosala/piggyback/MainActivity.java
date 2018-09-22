@@ -106,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onFailure(int reason) {
                     //Code to be done while name change Fails
                     Toast.makeText(MainActivity.this, "Something went wrong.", Toast.LENGTH_SHORT).show();
+                    changeDevName();
                 }
             });
         } catch (Exception e) {
@@ -130,9 +131,9 @@ public class MainActivity extends AppCompatActivity {
                 //What ever you want to do with the value
                 if(edittext.getText().toString().length() == 11){
                     setDevName(edittext.getText().toString());
+                    btnDiscover.performClick();
                 }else {
                     Toast.makeText(MainActivity.this, "Must be 11 digits", Toast.LENGTH_LONG).show();
-                    btnDiscover.performClick();
                     checkDevName();
                 }
             }
@@ -244,31 +245,25 @@ public class MainActivity extends AppCompatActivity {
                     if(deviceNameArray[i].contains(recipient.getText().toString())){
                         //Toast.makeText(MainActivity.this, "Has Recipient", Toast.LENGTH_SHORT).show();
                         mConnect(i);
-                        Handler handler = new Handler();
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                String msg = writeMsg.getText().toString();
-                                sendReceive.write(msg.getBytes());
-                                myDb.addToTEXT(msg, recipient.getText().toString());
-                            }
-                        }, 5000);
+                        String msg = writeMsg.getText().toString();
+                        sendReceive.write(msg.getBytes());
                         break;
-                        //Broadcasting nalang part
-                    }else{
-                        Toast.makeText(MainActivity.this, "No Recipient Found. Broadcasting to nearby Devices", Toast.LENGTH_SHORT).show();
-                        bConnect();
-                        Handler handler = new Handler();
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                String msg = writeMsg.getText().toString();
-                                sendReceive.write(msg.getBytes());
-                                myDb.addToTEXT(msg, recipient.getText().toString());
-                            }
-                        }, 10000);
                     }
                 }
+            }
+        });
+    }
+
+    private void disconnect() {
+        mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.d("Success", "Disconnected");
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Log.d("Failed", "Som Ting Wong!");
             }
         });
     }
