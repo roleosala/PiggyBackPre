@@ -39,12 +39,15 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import ph.edu.addu.richardleosala.piggyback.Database.DatabaseHelper;
+import ph.edu.addu.richardleosala.piggyback.Routing.CheckWifi;
+
 public class MainActivity extends AppCompatActivity {
     Button btnOnOff, btnDiscover, btnSend;
     ListView listView;
     TextView connectionStatus;
     TextView read_msg_box;
-    EditText writeMsg;
+    EditText writeMsg, recipient;
 
     WifiManager wifiManager;
     WifiP2pManager mManager;
@@ -67,6 +70,8 @@ public class MainActivity extends AppCompatActivity {
     SendReceive sendReceive;
 
     String trueDevName;
+
+    DatabaseHelper myDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -164,6 +169,8 @@ public class MainActivity extends AppCompatActivity {
         read_msg_box = findViewById(R.id.readMsg);
         writeMsg = findViewById(R.id.writeMsg);
         connectionStatus = findViewById(R.id.connectionStatus);
+        recipient = findViewById(R.id.recipient);
+        //btnDiscover.performClick();
 
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -232,12 +239,33 @@ public class MainActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String msg = writeMsg.getText().toString();
+                final String msg = writeMsg.getText().toString();
+                /*boolean en = checkWifi.checked();
+                if(en == false)
+                    checkWifi.turnOnWifi();*/
+                //Check if there are available devices nearby
                 sendReceive.write(msg.getBytes());
             }
         });
     }
+    //connect to a device after recipient is found
+    private void mConnect(int i){
+        final WifiP2pDevice device = deviceArray[i];
+        WifiP2pConfig config = new WifiP2pConfig();
+        config.deviceAddress = device.deviceAddress;
+        //wifiDirectAutoAccept = new WifiDirectAutoAccept(this, mManager, mChannel);
+        mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, Toast.LENGTH_SHORT ).show();
+            }
 
+            @Override
+            public void onFailure(int reason) {
+                Toast.makeText(getApplicationContext(), "Not Connected" , Toast.LENGTH_SHORT ).show();
+            }
+        });
+    }
 
     //On Click in btnDiscover
     WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
@@ -254,7 +282,6 @@ public class MainActivity extends AppCompatActivity {
                     deviceArray[index]=device;
                     index++;
                 }
-
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, deviceNameArray);
                 listView.setAdapter(adapter);
             }
