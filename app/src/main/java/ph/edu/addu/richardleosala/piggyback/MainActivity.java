@@ -2,6 +2,7 @@ package ph.edu.addu.richardleosala.piggyback;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -12,12 +13,17 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
+import android.text.Layout;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,6 +31,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -35,7 +42,8 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     Button btnOnOff, btnDiscover, btnSend;
     ListView listView;
-    TextView read_msg_box, connectionStatus;
+    TextView connectionStatus;
+    TextView read_msg_box;
     EditText writeMsg;
 
     WifiManager wifiManager;
@@ -58,13 +66,80 @@ public class MainActivity extends AppCompatActivity {
     ClientClass clientClass;
     SendReceive sendReceive;
 
+    String trueDevName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initialWork();
+        checkDevName();
         exqListener();
+    }
+
+    private void checkDevName() {
+        if(trueDevName == null){
+            changeDevName();
+        }
+    }
+
+    /**Method to Change the Device Name**/
+
+    private void setDevName( final String devName) {
+        try {
+            Method m = mManager.getClass().getMethod(
+                    "setDeviceName",
+                    new Class[] { WifiP2pManager.Channel.class, String.class,
+                            WifiP2pManager.ActionListener.class });
+
+            m.invoke(mManager,mChannel, devName, new WifiP2pManager.ActionListener() {
+                public void onSuccess() {
+                    trueDevName = devName;
+                    Toast.makeText(MainActivity.this, "Successfully Changed Device Name to: " + devName, Toast.LENGTH_SHORT).show();
+                }
+
+                public void onFailure(int reason) {
+                    //Code to be done while name change Fails
+                    Toast.makeText(MainActivity.this, "Something went wrong.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+    }
+
+    /**Method to Register the Device Name**/
+
+    public void changeDevName(){
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        final EditText edittext = new EditText(MainActivity.this);
+        alert.setMessage("Enter Phone Number to Change the device name");
+        alert.setTitle("Register Phone");
+        edittext.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+        alert.setView(edittext);
+
+        alert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                //What ever you want to do with the value
+                if(edittext.getText().toString().length() == 11){
+                    setDevName(edittext.getText().toString());
+                }else {
+                    Toast.makeText(MainActivity.this, "Must be 11 digits", Toast.LENGTH_LONG).show();
+                    checkDevName();
+                }
+            }
+        });
+
+        alert.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                // what ever you want to do with No option.
+                changeDevName();
+            }
+        });
+
+        alert.show();
     }
 
     Handler handler = new Handler(new Handler.Callback() {
@@ -89,7 +164,6 @@ public class MainActivity extends AppCompatActivity {
         read_msg_box = findViewById(R.id.readMsg);
         writeMsg = findViewById(R.id.writeMsg);
         connectionStatus = findViewById(R.id.connectionStatus);
-
 
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);

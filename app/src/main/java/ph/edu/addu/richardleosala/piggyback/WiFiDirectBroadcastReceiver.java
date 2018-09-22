@@ -17,6 +17,7 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
         this.mChannel = mChannel;
         this.mActivity = mActivity;
     }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
