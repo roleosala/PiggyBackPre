@@ -157,6 +157,11 @@ public class MainActivity extends AppCompatActivity {
                     byte[] readBbuff = (byte [])msg.obj;
                     String tempMsg = new String(readBbuff, 0, msg.arg1);
                     read_msg_box.setText(tempMsg);
+                    /**Method for using self evaluation**/
+                    /*String msgSplit[] = tempMsg.split("#-#");
+                    if(msgSplit[1] == trueDevName){
+                        read_msg_box.setText(msgSplit[0]);
+                    }*/
                     break;
             }
             return true;
@@ -241,13 +246,47 @@ public class MainActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                int lapse = 0;
                 for(int i = 0; i < deviceNameArray.length; i++){
                     if(deviceNameArray[i].contains(recipient.getText().toString())){
                         //Toast.makeText(MainActivity.this, "Has Recipient", Toast.LENGTH_SHORT).show();
-                        mConnect(i);
-                        String msg = writeMsg.getText().toString();
-                        sendReceive.write(msg.getBytes());
+                        mConnect(i);// connect to specific node
+                        Handler handler = new Handler();
+                        lapse++;
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                String msg = writeMsg.getText().toString() + "#-#" + recipient.getText().toString() +"#-#" + trueDevName;
+                                sendReceive.write(msg.getBytes());
+                                //Toast.makeText(MainActivity.this, msg.getBytes().toString(), Toast.LENGTH_SHORT).show();
+                            }
+                        },3000);
                         break;
+                    }
+                }
+                if(lapse == 0){
+                    if(deviceNameArray.length > 0){
+                        String wbSent = writeMsg.getText().toString()+"#-#"+recipient+"#-#"+trueDevName+"#-#";
+                        for(int i = 1; i <deviceNameArray.length; i++){
+                            wbSent += deviceNameArray[i];
+                        }
+                        final String tempMsg = wbSent;
+                        Handler handler1 = new Handler();
+                        handler1.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                for (int i = 0; i <deviceNameArray.length; i++){
+                                    mConnect(i);
+                                }
+                            }
+                        },3000);
+                        Handler handler = new Handler();
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                sendReceive.write(tempMsg.getBytes());
+                            }
+                        }, 5000);
                     }
                 }
             }
