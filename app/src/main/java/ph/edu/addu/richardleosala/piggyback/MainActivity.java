@@ -44,9 +44,9 @@ import ph.edu.addu.richardleosala.piggyback.Routing.CheckWifi;
 
 public class MainActivity extends AppCompatActivity {
     Button btnOnOff, btnDiscover, btnSend;
-    ListView listView;
+    ListView listView, msgListView;
     TextView connectionStatus;
-    TextView read_msg_box;
+    TextView read_msg_box, availDev;
     EditText writeMsg, recipient;
 
     WifiManager wifiManager;
@@ -106,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onFailure(int reason) {
                     //Code to be done while name change Fails
                     Toast.makeText(MainActivity.this, "Something went wrong.", Toast.LENGTH_SHORT).show();
+                    wifiManager.setWifiEnabled(true);
                     changeDevName();
                 }
             });
@@ -156,17 +157,28 @@ public class MainActivity extends AppCompatActivity {
                 case MESSAGE_READ:
                     byte[] readBbuff = (byte [])msg.obj;
                     String tempMsg = new String(readBbuff, 0, msg.arg1);
+                    String msgSplit[] = tempMsg.split("#-#");
                     read_msg_box.setText(tempMsg);
-                    /**Method for using self evaluation**/
-                    /*String msgSplit[] = tempMsg.split("#-#");
-                    if(msgSplit[1] == trueDevName){
-                        read_msg_box.setText(msgSplit[0]);
-                    }*/
+                    if(msgSplit[1].contains(trueDevName)){
+                        recipient.setText(msgSplit[2]);
+                        read_msg_box.setText(msgSplit[0]+" From: "+msgSplit[2]);
+                        myDb.addToTEXT(msgSplit[0], msgSplit[2]);
+                        populate(read_msg_box.getText().toString());
+                    }else{
+                        read_msg_box.setText(tempMsg);
+                    }
                     break;
             }
             return true;
         }
     });
+    ArrayList<String> msgList = new ArrayList<String>();
+    ArrayAdapter<String> msgAdapter;
+    public void populate(String msg){
+        msgList.add(msg);
+        msgAdapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, msgList);
+        msgListView.setAdapter(msgAdapter);
+    }
 
     private void initialWork() {
         btnOnOff = findViewById(R.id.onOff);
@@ -177,6 +189,9 @@ public class MainActivity extends AppCompatActivity {
         writeMsg = findViewById(R.id.writeMsg);
         connectionStatus = findViewById(R.id.connectionStatus);
         recipient = findViewById(R.id.recipient);
+        availDev = findViewById(R.id.availDev);
+        msgListView = findViewById(R.id.msgListView);
+
         btnDiscover.performClick(); // Start Activity, also Start Discovery
 
 
@@ -246,47 +261,55 @@ public class MainActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int lapse = 0;
-                for(int i = 0; i < deviceNameArray.length; i++){
-                    if(deviceNameArray[i].contains(recipient.getText().toString())){
-                        //Toast.makeText(MainActivity.this, "Has Recipient", Toast.LENGTH_SHORT).show();
-                        mConnect(i);// connect to specific node
-                        Handler handler = new Handler();
-                        lapse++;
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                String msg = writeMsg.getText().toString() + "#-#" + recipient.getText().toString() +"#-#" + trueDevName;
-                                sendReceive.write(msg.getBytes());
-                                //Toast.makeText(MainActivity.this, msg.getBytes().toString(), Toast.LENGTH_SHORT).show();
-                            }
-                        },3000);
-                        break;
-                    }
-                }
-                if(lapse == 0){
-                    if(deviceNameArray.length > 0){
-                        String wbSent = writeMsg.getText().toString()+"#-#"+recipient+"#-#"+trueDevName+"#-#";
-                        for(int i = 1; i <deviceNameArray.length; i++){
-                            wbSent += deviceNameArray[i];
-                        }
-                        final String tempMsg = wbSent;
-                        Handler handler1 = new Handler();
-                        handler1.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                for (int i = 0; i <deviceNameArray.length; i++){
-                                    mConnect(i);
+                if(connectionStatus.getText().toString() == "Host" || connectionStatus.getText().toString() == "Client"){
+                    String msg = writeMsg.getText().toString() + "#-#" + recipient.getText().toString() +"#-#" + trueDevName;
+                    sendReceive.write(msg.getBytes());
+                }else{
+                    int lapse = 0; //should contain any an incremented number if the target device is found
+                    for(int i = 0; i < deviceNameArray.length; i++){
+                        if(deviceNameArray[i].contains(recipient.getText().toString())){
+                            //Toast.makeText(MainActivity.this, "Has Recipient", Toast.LENGTH_SHORT).show();
+                            mConnect(i);// connect to specific node, using i as the placement of deviceNameArray(specific)
+                            final Handler handler = new Handler();
+                            lapse++;
+                            handler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    final String msg = writeMsg.getText().toString() + "#-#" + recipient.getText().toString() +"#-#" + trueDevName;
+                                    handler.postDelayed(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            String split[];
+                                            split = msg.split("#-#");
+                                            populate(split[0]);
+                                            sendReceive.write(msg.getBytes());
+                                        }
+                                    }, 5000);
+
+                                    //sendReceive.write(msg.getBytes());
+                                    //Toast.makeText(MainActivity.this, msg.getBytes().toString(), Toast.LENGTH_SHORT).show();
                                 }
-                            }
-                        },3000);
-                        Handler handler = new Handler();
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                sendReceive.write(tempMsg.getBytes());
-                            }
-                        }, 5000);
+                            },5000);
+                            break;
+                        }
+                    }
+                    if(lapse == 0){
+                        if(deviceNameArray.length > 0){
+                            String tempmsg = writeMsg.getText().toString()+"#-#"+recipient.getText().toString()+"#-#"+trueDevName+"#-#";
+                            for(int i = 0; i <deviceNameArray.length; i++){ tempmsg += deviceNameArray[i]; }
+                            //for(int i = 0; i <deviceNameArray.length; i++){ mConnect(i); }
+                            mManager.createGroup(mChannel, new WifiP2pManager.ActionListener() {
+                                @Override
+                                public void onSuccess() {
+                                    for(int i = 0; i <deviceNameArray.length; i++){ mConnect(i); }
+                                }
+
+                                @Override
+                                public void onFailure(int reason) {
+
+                                }
+                            });
+                        }
                     }
                 }
             }
@@ -363,6 +386,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, deviceNameArray);
                 listView.setAdapter(adapter);
+                availDev.setText("Available Nearby Devices: "+deviceNameArray.length);
             }
 
             if (peers.size()==0){

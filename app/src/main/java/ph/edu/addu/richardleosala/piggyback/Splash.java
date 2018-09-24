@@ -11,6 +11,10 @@ public class Splash extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
+        splashCode();
+    }
+
+    private void splashCode(){
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
@@ -19,5 +23,11 @@ public class Splash extends AppCompatActivity {
                 startActivity(intent);
             }
         }, 3000);
+    }
+
+    @Override
+    protected  void onRestart() {
+        super.onRestart();
+        splashCode();
     }
 }

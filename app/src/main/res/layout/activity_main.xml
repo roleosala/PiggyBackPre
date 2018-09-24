@@ -12,7 +12,9 @@
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:text="Wifi On" />
+        android:text="Wifi On"
+        android:visibility="invisible"
+        android:clickable="false"/>
 
     <Button
         android:id="@+id/discover"
@@ -22,24 +24,57 @@
         android:layout_alignParentTop="true"
         android:text="discover" />
 
+    <TextView
+        android:id="@+id/txtView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/availDev"
+        android:layout_marginEnd="0dp"
+        android:layout_marginTop="10dp"
+        android:backgroundTint="@color/transparent"
+        android:text="Send to:"
+        android:textAlignment="textStart"
+        android:textSize="15sp"
+        android:textStyle="italic"/>
+
+    <TextView
+        android:id="@+id/availDev"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/connectionStatus"
+        android:layout_marginTop="10dp"
+        android:text="No Devices Nearby"
+        android:textAlignment="center"
+        android:textSize="20sp"
+        android:textStyle="italic" />
+
     <EditText
         android:id="@+id/recipient"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
         android:layout_alignParentStart="true"
-        android:layout_below="@+id/onOff"
+        android:layout_below="@+id/txtView"
         android:layout_marginStart="0dp"
-        android:inputType="number"/>
+        android:layout_marginTop="0dp"
+        android:inputType="number" />
 
 
     <ListView
         android:id="@+id/peerListView"
         android:layout_width="match_parent"
-        android:layout_height="128dp"
+        android:layout_height="20dp"
         android:layout_alignParentStart="true"
         android:layout_below="@+id/onOff"
         android:layout_marginTop="45dp"
-        android:background="@android:color/holo_orange_light" />
+        android:background="@android:color/holo_orange_light"
+        android:clickable="false"
+        android:visibility="invisible" />
+
 
     <TextView
         android:id="@+id/readMsg"
@@ -47,8 +82,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentStart="true"
-        android:layout_below="@+id/peerListView"
-        android:layout_marginTop="31dp"
+        android:layout_below="@+id/recipient"
+        android:layout_marginTop="20dp"
         android:text="Message"
         android:textAlignment="center"
         android:textSize="20sp"
@@ -84,5 +119,24 @@
         android:textColor="@android:color/holo_blue_dark"
         android:textSize="18sp"
         android:textStyle="italic" />
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/readMsg">
+
+        <ListView
+            android:id="@+id/msgListView"
+            android:layout_width="wrap_content"
+            android:layout_height="200dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/readMsg">
+
+        </ListView>
+    </android.support.constraint.ConstraintLayout>
+
 
 </RelativeLayout>
