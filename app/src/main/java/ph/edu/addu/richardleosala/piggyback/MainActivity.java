@@ -8,6 +8,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
@@ -37,7 +38,9 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import ph.edu.addu.richardleosala.piggyback.Database.DatabaseHelper;
 import ph.edu.addu.richardleosala.piggyback.Routing.CheckWifi;
@@ -166,12 +169,14 @@ public class MainActivity extends AppCompatActivity {
                         populate(read_msg_box.getText().toString());
                     }else{
                         read_msg_box.setText(tempMsg);
+                        myDb.storeMsgs(msgSplit[2], msgSplit[0], msgSplit[1], msgSplit[3]);
                     }
                     break;
             }
             return true;
         }
     });
+
     ArrayList<String> msgList = new ArrayList<String>();
     ArrayAdapter<String> msgAdapter;
     public void populate(String msg){
@@ -191,6 +196,7 @@ public class MainActivity extends AppCompatActivity {
         recipient = findViewById(R.id.recipient);
         availDev = findViewById(R.id.availDev);
         msgListView = findViewById(R.id.msgListView);
+        myDb = new DatabaseHelper(this);
 
         btnDiscover.performClick(); // Start Activity, also Start Discovery
 
@@ -261,9 +267,12 @@ public class MainActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 if(connectionStatus.getText().toString() == "Host" || connectionStatus.getText().toString() == "Client"){
                     String msg = writeMsg.getText().toString() + "#-#" + recipient.getText().toString() +"#-#" + trueDevName;
                     sendReceive.write(msg.getBytes());
+                    populate(writeMsg.getText().toString());
+                    writeMsg.setText("");
                 }else{
                     int lapse = 0; //should contain any an incremented number if the target device is found
                     for(int i = 0; i < deviceNameArray.length; i++){
@@ -283,6 +292,7 @@ public class MainActivity extends AppCompatActivity {
                                             split = msg.split("#-#");
                                             populate(split[0]);
                                             sendReceive.write(msg.getBytes());
+                                            writeMsg.setText("");
                                         }
                                     }, 5000);
 
@@ -294,21 +304,40 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     if(lapse == 0){
+                        /**Broadcasting Code doing it manually**/
                         if(deviceNameArray.length > 0){
                             String tempmsg = writeMsg.getText().toString()+"#-#"+recipient.getText().toString()+"#-#"+trueDevName+"#-#";
                             for(int i = 0; i <deviceNameArray.length; i++){ tempmsg += deviceNameArray[i]; }
                             //for(int i = 0; i <deviceNameArray.length; i++){ mConnect(i); }
-                            mManager.createGroup(mChannel, new WifiP2pManager.ActionListener() {
-                                @Override
-                                public void onSuccess() {
-                                    for(int i = 0; i <deviceNameArray.length; i++){ mConnect(i); }
-                                }
+                            final String finalMsg = tempmsg;
+                            mConnect(0);
+                            for (int i = 1; i < deviceNameArray.length; i++){
+                                Handler handler = new Handler();
+                                final int j = i;
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mConnect(j);
+                                        final String msg = finalMsg;
+                                        Handler handler1 = new Handler();
+                                        handler1.postDelayed(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                sendReceive.write(msg.getBytes());
+                                                Handler handler2 = new Handler();
+                                                writeMsg.setText("");
+                                                handler2.postDelayed(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        disconnect();
+                                                    }
+                                                }, 500);
+                                            }
+                                        },3000);
 
-                                @Override
-                                public void onFailure(int reason) {
-
-                                }
-                            });
+                                    }
+                                }, 5000);
+                            }
                         }
                     }
                 }
@@ -407,6 +436,19 @@ public class MainActivity extends AppCompatActivity {
                 connectionStatus.setText("Client");
                 clientClass = new ClientClass(groupOwnerAddress);
                 clientClass.start();
+            }
+        }
+    };
+
+    WifiP2pManager.GroupInfoListener groupInfoListener = new WifiP2pManager.GroupInfoListener() {
+        @Override
+        public void onGroupInfoAvailable(WifiP2pGroup group) {
+            Collection<WifiP2pDevice> peerList = group.getClientList();
+            ArrayList<WifiP2pDevice> list = new ArrayList<WifiP2pDevice>(peerList);
+            String host;
+            for (int i = 1; i < list.size(); i++) {
+                host = list.get(i).deviceAddress;
+                /** transferFile here **/
             }
         }
     };
