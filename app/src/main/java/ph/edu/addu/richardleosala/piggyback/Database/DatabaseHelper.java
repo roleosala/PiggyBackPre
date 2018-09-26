@@ -39,7 +39,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createTable);
         createTable = "CREATE TABLE "+T_DNM_TEXT + " (msg_id INTEGER PRIMARY KEY AUTOINCREMENT," + "text VARCHAR(1000) "+", num_id INT"+", sender INT)";
         db.execSQL(createTable);
-        createTable = "CREATE TABLE "+STORED_MSGS + "("+STORED_MSGS_ID+" INTEGER PRIMARY KEY AUTOINCREMENT, "+STORED_MSGS_MSGS+" VARCHAR(1500),"+STORED_MSGS_SENDER+" VARCHAR(255), "+STORED_MSGS_RECEIVER+" VARCHAR(255), "+ STORED_MSGS_SENTTO +" VARCHAR(1500));";
+        createTable = "CREATE TABLE "+STORED_MSGS + "("+STORED_MSGS_ID+" INTEGER PRIMARY KEY AUTOINCREMENT, "+STORED_MSGS_MSGS+" VARCHAR(1500));";
         db.execSQL(createTable);
     }
 
@@ -100,14 +100,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return data;
     }
 
-    public boolean storeMsgs(String sender, String msg, String receiver, String sentTo){
+    public boolean storeMsgs(String msg){
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        long res = db.insert(STORED_MSGS, null, contentValues);
-        contentValues.put(STORED_MSGS_SENDER, sender);
-        contentValues.put(STORED_MSGS_RECEIVER, receiver);
         contentValues.put(STORED_MSGS_MSGS, msg);
-        contentValues.put(STORED_MSGS_SENTTO, sentTo );
-        return false;
+        long res = db.insert(STORED_MSGS, null, contentValues);
+        if(res == -1)
+            return false;
+        else
+            return true;
+    }
+    public Cursor getStoreMsgs(){
+        SQLiteDatabase db = getWritableDatabase();
+        Cursor data = db.rawQuery("SELECT * FROM "+ STORED_MSGS , null);
+        return data;
     }
 }

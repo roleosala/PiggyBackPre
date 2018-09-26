@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -136,6 +137,15 @@ public class MainActivity extends AppCompatActivity {
                 if(edittext.getText().toString().length() == 11){
                     setDevName(edittext.getText().toString());
                     btnDiscover.performClick();
+                    Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            for(int i = 0; i > -1; i++){
+                                storedMsgsCheck();
+                            }
+                        }
+                    },15000);
                 }else {
                     Toast.makeText(MainActivity.this, "Must be 11 digits", Toast.LENGTH_LONG).show();
                     checkDevName();
@@ -169,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
                         populate(read_msg_box.getText().toString());
                     }else{
                         read_msg_box.setText(tempMsg);
-                        myDb.storeMsgs(msgSplit[2], msgSplit[0], msgSplit[1], msgSplit[3]);
+                        myDb.storeMsgs(tempMsg);
                     }
                     break;
             }
@@ -198,8 +208,7 @@ public class MainActivity extends AppCompatActivity {
         msgListView = findViewById(R.id.msgListView);
         myDb = new DatabaseHelper(this);
 
-        btnDiscover.performClick(); // Start Activity, also Start Discovery
-
+        btnDiscover.performClick();
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
@@ -311,6 +320,15 @@ public class MainActivity extends AppCompatActivity {
                             //for(int i = 0; i <deviceNameArray.length; i++){ mConnect(i); }
                             final String finalMsg = tempmsg;
                             mConnect(0);
+                            final String msg = tempmsg;
+                            Handler handler1 = new Handler();
+                            handler1.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    sendReceive.write(msg.getBytes());
+                                    disconnect();
+                                }
+                            }, 10000);
                             for (int i = 1; i < deviceNameArray.length; i++){
                                 Handler handler = new Handler();
                                 final int j = i;
@@ -402,27 +420,78 @@ public class MainActivity extends AppCompatActivity {
     WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
-            if(!peerList.getDeviceList().equals(peers)){
+            if (!peerList.getDeviceList().equals(peers)) {
                 peers.clear();
                 peers.addAll(peerList.getDeviceList());
                 deviceNameArray = new String[peerList.getDeviceList().size()];
                 deviceArray = new WifiP2pDevice[peerList.getDeviceList().size()];
                 int index = 0;
-                for(WifiP2pDevice device : peerList.getDeviceList()){
+                for (WifiP2pDevice device : peerList.getDeviceList()) {
                     deviceNameArray[index] = device.deviceName;
-                    deviceArray[index]=device;
+                    deviceArray[index] = device;
                     index++;
                 }
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_list_item_1, deviceNameArray);
                 listView.setAdapter(adapter);
-                availDev.setText("Available Nearby Devices: "+deviceNameArray.length);
+                availDev.setText("Available Nearby Devices: " + deviceNameArray.length);
             }
+            /**Check Stored Messages if the there are available peers nearby that matches recipient*/
 
-            if (peers.size()==0){
+            if (peers.size() == 0) {
                 Toast.makeText(getApplicationContext(), "No Device Found", Toast.LENGTH_SHORT).show();
             }
         }
     };
+
+    public void storedMsgsCheck(){
+        Cursor data = myDb.getStoreMsgs();
+        String[] storedMsgs = new String[500];
+        if(data.getCount() == 0){
+            Toast.makeText(MainActivity.this, "No Stored Messages", Toast.LENGTH_SHORT).show();
+        }else{
+            int c = 0;
+            String msg;
+            String [] devName = deviceNameArray;
+            while (data.moveToNext()){
+                //boolean add = listNum.add(data.getString(1));
+                msg = data.getString(1);
+                String []splitMsg = msg.split("#-#");
+                if (devName != null) {
+                    for(int i = 0; i < deviceNameArray.length;i++) {
+                        if (deviceNameArray[i].contains(splitMsg[1])) {
+                            Log.d("Device if found", "Found Target Device");
+                            mConnect(i);
+                            sendMessage(msg);
+                        }else{
+                            Log.d("Device if found", "Target Device not Found");
+                        }
+                    }
+                }
+                else{ Log.d("devName", "NULL");}
+                /*
+                }*/
+                c++;
+            }
+        }
+    }
+
+    public void sendMessage(String msg){
+        final String fMsg = msg;
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                sendReceive.write(fMsg.getBytes());
+                Handler handler1 = new Handler();
+                handler1.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        disconnect();
+                    }
+                },500);
+            }
+        },10000);
+    }
 
     WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
         @Override
