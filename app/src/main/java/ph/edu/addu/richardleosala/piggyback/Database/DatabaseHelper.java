@@ -115,4 +115,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor data = db.rawQuery("SELECT * FROM "+ STORED_MSGS , null);
         return data;
     }
+    public void deleteStoredMsg(String id){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE FROM "+ STORED_MSGS +" WHERE "+STORED_MSGS_ID +" = "+ id);
+        db.close();
+    }
 }

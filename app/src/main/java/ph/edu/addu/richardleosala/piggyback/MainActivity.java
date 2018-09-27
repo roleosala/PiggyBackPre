@@ -14,6 +14,7 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -42,6 +43,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import ph.edu.addu.richardleosala.piggyback.Database.DatabaseHelper;
 import ph.edu.addu.richardleosala.piggyback.Routing.CheckWifi;
@@ -137,13 +140,13 @@ public class MainActivity extends AppCompatActivity {
                 if(edittext.getText().toString().length() == 11){
                     setDevName(edittext.getText().toString());
                     btnDiscover.performClick();
-                    Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
+                    Timer timer = new Timer();
+                    timer.scheduleAtFixedRate(new TimerTask() {
                         @Override
                         public void run() {
                             storedMsgsCheck();
                         }
-                    },15000);
+                    }, 15000, 15000);
                 }else {
                     Toast.makeText(MainActivity.this, "Must be 11 digits", Toast.LENGTH_LONG).show();
                     checkDevName();
@@ -276,10 +279,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 if(connectionStatus.getText().toString() == "Host" || connectionStatus.getText().toString() == "Client"){
-                    /*String msg = writeMsg.getText().toString() + "#-#" + recipient.getText().toString() +"#-#" + trueDevName;
+                    String msg = writeMsg.getText().toString() + "#-#" + recipient.getText().toString() +"#-#" + trueDevName;
                     sendReceive.write(msg.getBytes());
-                    populate(writeMsg.getText().toString());*/
-                    //writeMsg.setText("");
+                    populate(writeMsg.getText().toString());
+                    writeMsg.setText("");
                 }else{
                     int lapse = 0; //should contain any an incremented number if the target device is found
                     for(int i = 0; i < deviceNameArray.length; i++){
@@ -304,7 +307,7 @@ public class MainActivity extends AppCompatActivity {
                                             handler1.postDelayed(new Runnable() {
                                                 @Override
                                                 public void run() {
-                                                    disconnect();
+                                                    //disconnect();
                                                 }
                                             }, 500);
                                         }
@@ -313,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
                                     //sendReceive.write(msg.getBytes());
                                     //Toast.makeText(MainActivity.this, msg.getBytes().toString(), Toast.LENGTH_SHORT).show();
                                 }
-                            },3000);
+                            },8000);
                             break;
                         }
                     }
@@ -359,7 +362,7 @@ public class MainActivity extends AppCompatActivity {
                                         },3000);
 
                                     }
-                                }, 5000);
+                                }, 10000);
                             }
                         }
                     }
@@ -452,7 +455,8 @@ public class MainActivity extends AppCompatActivity {
         Cursor data = myDb.getStoreMsgs();
         String[] storedMsgs = new String[500];
         if(data.getCount() == 0){
-            Toast.makeText(MainActivity.this, "No Stored Messages", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(MainActivity.this, "No Stored Messages", Toast.LENGTH_SHORT).show();
+            Log.d("Database", "No Stored Messages");
         }else{
             int c = 0;
             String msg;
@@ -466,36 +470,40 @@ public class MainActivity extends AppCompatActivity {
                         if (deviceNameArray[i].contains(splitMsg[1])) {
                             Log.d("Device if found", "Found Target Device");
                             mConnect(i);
-                            sendMessage(msg);
+                            Handler handler = new Handler(Looper.getMainLooper());
+                            final String finalMsg = msg;
+                            final String storedMsgId = data.getString(0);
+                            handler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+
+                                    sendMessage(finalMsg, storedMsgId);
+                                }
+                            },10000);
+                            c++;
                         }else{
                             Log.d("Device if found", "Target Device not Found");
                         }
                     }
                 }
-                else{ Log.d("devName", "NULL");}
-                /*
-                }*/
-                c++;
+                else{ Log.d("Nearby Devices:", "0");}
             }
         }
     }
 
-    public void sendMessage(String msg){
+    public void sendMessage(String msg, String storedMsgId){
         final String fMsg = msg;
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                sendReceive.write(fMsg.getBytes());
-                Handler handler1 = new Handler();
-                handler1.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        disconnect();
-                    }
-                },500);
-            }
-        },10000);
+        if(connectionStatus.getText().toString() == "Host" || connectionStatus.getText().toString() == "Client"){
+            myDb.deleteStoredMsg(storedMsgId);
+            sendReceive.write(fMsg.getBytes());
+            Handler handler1 = new Handler();
+            handler1.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    disconnect();
+                }
+            },500);
+        }
     }
 
     WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
