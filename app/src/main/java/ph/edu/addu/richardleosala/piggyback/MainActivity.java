@@ -141,9 +141,7 @@ public class MainActivity extends AppCompatActivity {
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            for(int i = 0; i > -1; i++){
-                                storedMsgsCheck();
-                            }
+                            storedMsgsCheck();
                         }
                     },15000);
                 }else {
@@ -278,10 +276,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 if(connectionStatus.getText().toString() == "Host" || connectionStatus.getText().toString() == "Client"){
-                    String msg = writeMsg.getText().toString() + "#-#" + recipient.getText().toString() +"#-#" + trueDevName;
+                    /*String msg = writeMsg.getText().toString() + "#-#" + recipient.getText().toString() +"#-#" + trueDevName;
                     sendReceive.write(msg.getBytes());
-                    populate(writeMsg.getText().toString());
-                    writeMsg.setText("");
+                    populate(writeMsg.getText().toString());*/
+                    //writeMsg.setText("");
                 }else{
                     int lapse = 0; //should contain any an incremented number if the target device is found
                     for(int i = 0; i < deviceNameArray.length; i++){
@@ -302,13 +300,20 @@ public class MainActivity extends AppCompatActivity {
                                             populate(split[0]);
                                             sendReceive.write(msg.getBytes());
                                             writeMsg.setText("");
+                                            Handler handler1 = new Handler();
+                                            handler1.postDelayed(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    disconnect();
+                                                }
+                                            }, 500);
                                         }
-                                    }, 5000);
+                                    }, 2000);
 
                                     //sendReceive.write(msg.getBytes());
                                     //Toast.makeText(MainActivity.this, msg.getBytes().toString(), Toast.LENGTH_SHORT).show();
                                 }
-                            },5000);
+                            },3000);
                             break;
                         }
                     }

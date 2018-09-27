@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"
-    android:background="@color/PiggyBackBKG">
+    android:background="@color/grey">
 
 
     <Button
@@ -35,7 +35,6 @@
         android:layout_below="@+id/availDev"
         android:layout_marginEnd="0dp"
         android:layout_marginTop="10dp"
-        android:backgroundTint="@color/transparent"
         android:text="Send to:"
         android:textAlignment="textStart"
         android:textSize="15sp"
