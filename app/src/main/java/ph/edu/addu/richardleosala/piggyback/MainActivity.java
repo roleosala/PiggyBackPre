@@ -87,6 +87,9 @@ public class MainActivity extends AppCompatActivity {
 
     DatabaseHelper myDb;
 
+    //try WifiDirectAutoAccept
+    WifiDirectAutoAccept wifiDirectAutoAccept;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -190,8 +193,10 @@ public class MainActivity extends AppCompatActivity {
                         }else{
                             Log.d("Inserting ", "Failed");
                         }
+                        Log.d("Received Message:",msgSplit[0]);
                         populate(read_msg_box.getText().toString());
                     }else{
+                        Log.d("Received Message:",msgSplit[0]);
                         read_msg_box.setText(tempMsg);
                         myDb.storeMsgs(tempMsg);
                     }
@@ -222,6 +227,10 @@ public class MainActivity extends AppCompatActivity {
         msgListView = findViewById(R.id.msgListView);
         myDb = new DatabaseHelper(this);
         btnDisconnect = findViewById(R.id.disconnect);
+
+        //try WifiDirectAutoAcceptClass
+        wifiDirectAutoAccept = new WifiDirectAutoAccept(this, mManager, mChannel);
+        wifiDirectAutoAccept.intercept(true);
 
         btnDiscover.performClick();
 
@@ -504,7 +513,7 @@ public class MainActivity extends AppCompatActivity {
                                 }, 10000);
                                 c++;
                             } else {
-                                for (int j = 0; j < deviceNameArray.length; i++) {
+                                /*for (int j = 0; j < deviceNameArray.length; i++) {
                                     msg += deviceNameArray[j];
                                 }
                                 //error diri java.lang.ArrayIndexOutOfBoundsException: length=0; index=12831
@@ -518,7 +527,7 @@ public class MainActivity extends AppCompatActivity {
                                     public void run() {
                                         sendMessage(finalMsg, storedMsgId);
                                     }
-                                }, 10000);
+                                }, 10000);*/
                             }
                         }
                     } else {
@@ -594,7 +603,12 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             try {
-                serverSocket = new ServerSocket(8888);
+                //serverSocket = new ServerSocket(8888); //original code ni (Error sa Binding if connecting again)
+                //trying code in Github Answers
+                serverSocket = new ServerSocket();
+                serverSocket.setReuseAddress(true);
+                serverSocket.bind(new InetSocketAddress(8888));
+                //diri lang taman mao lang man naka butang HAHAHAHAHA
                 socket = serverSocket.accept();
                 sendReceive = new SendReceive(socket);
                 sendReceive.start();

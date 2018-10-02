@@ -41,7 +41,7 @@ public class WifiDirectAutoAccept {
      * Construct a WifiDirectAutoAccept object using either an existing context or
      * an existing manager and channel.
      */
-    private WifiDirectAutoAccept(Context context, WifiP2pManager m, WifiP2pManager.Channel c) {
+    public WifiDirectAutoAccept(Context context, WifiP2pManager m, WifiP2pManager.Channel c) {
         Log.d(TAG, "context: " + context.hashCode());
         if (context != null && m == null) {
             manager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
