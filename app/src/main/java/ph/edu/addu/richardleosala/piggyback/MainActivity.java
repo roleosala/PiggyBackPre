@@ -1,8 +1,12 @@
 package ph.edu.addu.richardleosala.piggyback;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.wifi.WifiManager;
@@ -16,6 +20,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
@@ -49,8 +54,10 @@ import java.util.TimerTask;
 import ph.edu.addu.richardleosala.piggyback.Database.DatabaseHelper;
 import ph.edu.addu.richardleosala.piggyback.Routing.CheckWifi;
 
+import static android.widget.Toast.LENGTH_SHORT;
+
 public class MainActivity extends AppCompatActivity {
-    Button btnOnOff, btnDiscover, btnSend;
+    Button btnOnOff, btnDiscover, btnSend, btnDisconnect;
     ListView listView, msgListView;
     TextView connectionStatus;
     TextView read_msg_box, availDev;
@@ -107,12 +114,12 @@ public class MainActivity extends AppCompatActivity {
             m.invoke(mManager,mChannel, devName, new WifiP2pManager.ActionListener() {
                 public void onSuccess() {
                     trueDevName = devName;
-                    Toast.makeText(MainActivity.this, "Successfully Changed Device Name to: " + devName, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Successfully Changed Device Name to: " + devName, LENGTH_SHORT).show();
                 }
 
                 public void onFailure(int reason) {
                     //Code to be done while name change Fails
-                    Toast.makeText(MainActivity.this, "Something went wrong.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Something went wrong.", LENGTH_SHORT).show();
                     wifiManager.setWifiEnabled(true);
                     changeDevName();
                 }
@@ -175,8 +182,14 @@ public class MainActivity extends AppCompatActivity {
                     read_msg_box.setText(tempMsg);
                     if(msgSplit[1].contains(trueDevName)){
                         recipient.setText(msgSplit[2]);
+                        myDb.addToNum(msgSplit[2]); //add to database
                         read_msg_box.setText(msgSplit[0]+" From: "+msgSplit[2]);
-                        myDb.addToTEXT(msgSplit[0], msgSplit[2]);
+                        boolean res = myDb.addToTEXT(msgSplit[0], msgSplit[2]);
+                        if(res == true){
+                            Log.d("Inserting ", "Success");
+                        }else{
+                            Log.d("Inserting ", "Failed");
+                        }
                         populate(read_msg_box.getText().toString());
                     }else{
                         read_msg_box.setText(tempMsg);
@@ -208,6 +221,7 @@ public class MainActivity extends AppCompatActivity {
         availDev = findViewById(R.id.availDev);
         msgListView = findViewById(R.id.msgListView);
         myDb = new DatabaseHelper(this);
+        btnDisconnect = findViewById(R.id.disconnect);
 
         btnDiscover.performClick();
 
@@ -249,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(int reason) {
                         connectionStatus.setText("Discovery Starting Failed");
-                        Toast.makeText(MainActivity.this, "Be Sure to turn ON WIFI before starting Discovery", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Be Sure to turn ON WIFI before starting Discovery", LENGTH_SHORT).show();
                     }
                 });
             }
@@ -264,12 +278,12 @@ public class MainActivity extends AppCompatActivity {
                 mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
                     @Override
                     public void onSuccess() {
-                        Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, Toast.LENGTH_SHORT ).show();
+                        Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, LENGTH_SHORT ).show();
                     }
 
                     @Override
                     public void onFailure(int reason) {
-                        Toast.makeText(getApplicationContext(), "Not Connected" , Toast.LENGTH_SHORT ).show();
+                        Toast.makeText(getApplicationContext(), "Not Connected" , LENGTH_SHORT ).show();
                     }
                 });
             }
@@ -277,14 +291,13 @@ public class MainActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 if(connectionStatus.getText().toString() == "Host" || connectionStatus.getText().toString() == "Client"){
                     String msg = writeMsg.getText().toString() + "#-#" + recipient.getText().toString() +"#-#" + trueDevName;
                     sendReceive.write(msg.getBytes());
                     populate(writeMsg.getText().toString());
                     writeMsg.setText("");
                 }else{
-                    int lapse = 0; //should contain any an incremented number if the target device is found
+                    int lapse = 0; //should contain an incremented number if the target device is found
                     for(int i = 0; i < deviceNameArray.length; i++){
                         if(deviceNameArray[i].contains(recipient.getText().toString())){
                             //Toast.makeText(MainActivity.this, "Has Recipient", Toast.LENGTH_SHORT).show();
@@ -301,8 +314,11 @@ public class MainActivity extends AppCompatActivity {
                                             String split[];
                                             split = msg.split("#-#");
                                             populate(split[0]);
-                                            sendReceive.write(msg.getBytes());
-                                            writeMsg.setText("");
+                                            if(connectionStatus.getText().toString() == "Host" || connectionStatus.getText().toString() == "Client"){
+                                                sendReceive.write(msg.getBytes());
+                                                writeMsg.setText("");
+                                                Toast.makeText(MainActivity.this, "Message Sent", Toast.LENGTH_SHORT).show();
+                                            }
                                             Handler handler1 = new Handler();
                                             handler1.postDelayed(new Runnable() {
                                                 @Override
@@ -369,6 +385,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        btnDisconnect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                disconnect();
+            }
+        });
     }
 
     private void disconnect() {
@@ -394,12 +416,12 @@ public class MainActivity extends AppCompatActivity {
         mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, Toast.LENGTH_SHORT ).show();
+                Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, LENGTH_SHORT ).show();
             }
 
             @Override
             public void onFailure(int reason) {
-                Toast.makeText(getApplicationContext(), "Not Connected" , Toast.LENGTH_SHORT ).show();
+                Toast.makeText(getApplicationContext(), "Not Connected" , LENGTH_SHORT ).show();
             }
         });
     }
@@ -413,12 +435,12 @@ public class MainActivity extends AppCompatActivity {
             mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
-                    Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, Toast.LENGTH_SHORT ).show();
+                    Toast.makeText(getApplicationContext(), "Connected to " + device.deviceName, LENGTH_SHORT ).show();
                 }
 
                 @Override
                 public void onFailure(int reason) {
-                    Toast.makeText(getApplicationContext(), "Not Connected" , Toast.LENGTH_SHORT ).show();
+                    Toast.makeText(getApplicationContext(), "Not Connected" , LENGTH_SHORT ).show();
                 }
             });
         }
@@ -446,47 +468,63 @@ public class MainActivity extends AppCompatActivity {
             /**Check Stored Messages if the there are available peers nearby that matches recipient*/
 
             if (peers.size() == 0) {
-                Toast.makeText(getApplicationContext(), "No Device Found", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "No Device Found", LENGTH_SHORT).show();
             }
         }
     };
 
     public void storedMsgsCheck(){
-        Cursor data = myDb.getStoreMsgs();
-        String[] storedMsgs = new String[500];
-        if(data.getCount() == 0){
-            //Toast.makeText(MainActivity.this, "No Stored Messages", Toast.LENGTH_SHORT).show();
-            Log.d("Database", "No Stored Messages");
-        }else{
-            int c = 0;
-            String msg;
-            String [] devName = deviceNameArray;
-            while (data.moveToNext()){
-                //boolean add = listNum.add(data.getString(1));
-                msg = data.getString(1);
-                String []splitMsg = msg.split("#-#");
-                if (devName != null) {
-                    for(int i = 0; i < deviceNameArray.length;i++) {
-                        if (deviceNameArray[i].contains(splitMsg[1])) {
-                            Log.d("Device if found", "Found Target Device");
-                            mConnect(i);
-                            Handler handler = new Handler(Looper.getMainLooper());
-                            final String finalMsg = msg;
-                            final String storedMsgId = data.getString(0);
-                            handler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-
-                                    sendMessage(finalMsg, storedMsgId);
+        if(connectionStatus.getText().toString() != "Host" || connectionStatus.getText().toString() != "Client") {
+            Cursor data = myDb.getStoreMsgs();
+            String[] storedMsgs = new String[500];
+            if (data.getCount() == 0) {
+                //Toast.makeText(MainActivity.this, "No Stored Messages", Toast.LENGTH_SHORT).show();
+                Log.d("Database", "No Stored Messages");
+            } else {
+                int c = 0;
+                String msg;
+                String[] devName = deviceNameArray;
+                while (data.moveToNext()) {
+                    //boolean add = listNum.add(data.getString(1));
+                    msg = data.getString(1);
+                    String[] splitMsg = msg.split("#-#");
+                    if (devName != null) {
+                        for (int i = 0; i < deviceNameArray.length; i++) {
+                            if (deviceNameArray[i].contains(splitMsg[1]) && !deviceNameArray[i].contains(splitMsg[3])) {
+                                Log.d("Device if found", "Found Target Device");
+                                mConnect(i);
+                                Handler handler = new Handler(Looper.getMainLooper());
+                                final String finalMsg = msg;
+                                final String storedMsgId = data.getString(0);
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        sendMessage(finalMsg, storedMsgId);
+                                    }
+                                }, 10000);
+                                c++;
+                            } else {
+                                for (int j = 0; j < deviceNameArray.length; i++) {
+                                    msg += deviceNameArray[j];
                                 }
-                            },10000);
-                            c++;
-                        }else{
-                            Log.d("Device if found", "Target Device not Found");
+                                //error diri java.lang.ArrayIndexOutOfBoundsException: length=0; index=12831
+                                Log.d("Device if found", "Target Device not Found. Sending to: " + deviceNameArray[i]);
+                                mConnect(i);
+                                Handler handler = new Handler(Looper.getMainLooper());
+                                final String finalMsg = msg;
+                                final String storedMsgId = data.getString(0);
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        sendMessage(finalMsg, storedMsgId);
+                                    }
+                                }, 10000);
+                            }
                         }
+                    } else {
+                        Log.d("Nearby Devices:", "0");
                     }
                 }
-                else{ Log.d("Nearby Devices:", "0");}
             }
         }
     }

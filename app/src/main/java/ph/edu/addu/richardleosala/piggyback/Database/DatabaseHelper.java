@@ -37,7 +37,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         String createTable = "CREATE TABLE " + T_DNN_NUM + " (num_id INTEGER PRIMARY KEY AUTOINCREMENT, " + " num VARCHAR(255)   )";
         db.execSQL(createTable);
-        createTable = "CREATE TABLE "+T_DNM_TEXT + " (msg_id INTEGER PRIMARY KEY AUTOINCREMENT," + "text VARCHAR(1000) "+", num_id INT"+", sender INT)";
+        createTable = "CREATE TABLE "+T_DNM_TEXT + " (msg_id INTEGER PRIMARY KEY AUTOINCREMENT," + "text VARCHAR(1000) "+", num_id VARCHAR(255)"+", sender VARCHAR(255))";
         db.execSQL(createTable);
         createTable = "CREATE TABLE "+STORED_MSGS + "("+STORED_MSGS_ID+" INTEGER PRIMARY KEY AUTOINCREMENT, "+STORED_MSGS_MSGS+" VARCHAR(1500));";
         db.execSQL(createTable);
