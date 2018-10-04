@@ -100,13 +100,6 @@ public class MainActivity extends AppCompatActivity {
         initialWork();
         checkDevName();
         exqListener();
-        InstaBug();
-    }
-
-    private void InstaBug() {
-        /*new Instabug.Builder(this, "2a405bf4bbcdcfeba870208726d112c7")
-                .setInvocationEvents(InstabugInvocationEvent.SHAKE, InstabugInvocationEvent.SCREENSHOT)
-                .build();*/
     }
 
     private void checkDevName() {
