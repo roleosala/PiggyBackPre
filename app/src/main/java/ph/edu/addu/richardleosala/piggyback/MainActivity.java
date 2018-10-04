@@ -36,6 +36,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.instabug.library.Instabug;
+import com.instabug.library.invocation.InstabugInvocationEvent;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -97,6 +100,13 @@ public class MainActivity extends AppCompatActivity {
         initialWork();
         checkDevName();
         exqListener();
+        InstaBug();
+    }
+
+    private void InstaBug() {
+        /*new Instabug.Builder(this, "2a405bf4bbcdcfeba870208726d112c7")
+                .setInvocationEvents(InstabugInvocationEvent.SHAKE, InstabugInvocationEvent.SCREENSHOT)
+                .build();*/
     }
 
     private void checkDevName() {
