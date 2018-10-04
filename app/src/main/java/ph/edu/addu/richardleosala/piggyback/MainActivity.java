@@ -498,6 +498,10 @@ public class MainActivity extends AppCompatActivity {
                     msg = data.getString(1);
                     String[] splitMsg = msg.split("#-#");
                     if (devName != null) {
+                        String tempMsg = msg;
+                        for(int i = 0; i <deviceNameArray.length; i++){
+                            tempMsg += deviceNameArray[i];
+                        }
                         for (int i = 0; i < deviceNameArray.length; i++) {
                             if (deviceNameArray[i].contains(splitMsg[1]) && !deviceNameArray[i].contains(splitMsg[3])) {
                                 Log.d("Device if found", "Found Target Device");
@@ -515,19 +519,19 @@ public class MainActivity extends AppCompatActivity {
                             } else {
                                 /*for (int j = 0; j < deviceNameArray.length; i++) {
                                     msg += deviceNameArray[j];
-                                }
+                                }*/
                                 //error diri java.lang.ArrayIndexOutOfBoundsException: length=0; index=12831
                                 Log.d("Device if found", "Target Device not Found. Sending to: " + deviceNameArray[i]);
                                 mConnect(i);
                                 Handler handler = new Handler(Looper.getMainLooper());
-                                final String finalMsg = msg;
+                                final String finalMsg = tempMsg;
                                 final String storedMsgId = data.getString(0);
                                 handler.postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
                                         sendMessage(finalMsg, storedMsgId);
                                     }
-                                }, 10000);*/
+                                }, 10000);
                             }
                         }
                     } else {
