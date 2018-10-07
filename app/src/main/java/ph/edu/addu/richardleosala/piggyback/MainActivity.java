@@ -352,29 +352,20 @@ public class MainActivity extends AppCompatActivity {
                             for(int i = 0; i <deviceNameArray.length; i++){ tempmsg += deviceNameArray[i]; }
                             //for(int i = 0; i <deviceNameArray.length; i++){ mConnect(i); }
                             final String finalMsg = tempmsg;
-                            mConnect(0);
                             final String msg = tempmsg;
-                            Handler handler1 = new Handler();
-                            handler1.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    sendReceive.write(msg.getBytes());
-                                    disconnect();
-                                }
-                            }, 10000);
                             for (int i = 1; i < deviceNameArray.length; i++){
                                 Handler handler = new Handler();
                                 final int j = i;
+                                mConnect(j);
                                 handler.postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
-                                        mConnect(j);
+                                        sendReceive.write(msg.getBytes());
                                         final String msg = finalMsg;
                                         Handler handler1 = new Handler();
                                         handler1.postDelayed(new Runnable() {
                                             @Override
                                             public void run() {
-                                                sendReceive.write(msg.getBytes());
                                                 Handler handler2 = new Handler();
                                                 writeMsg.setText("");
                                                 handler2.postDelayed(new Runnable() {
