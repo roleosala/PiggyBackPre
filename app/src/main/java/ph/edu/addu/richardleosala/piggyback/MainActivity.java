@@ -44,12 +44,14 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import ph.edu.addu.richardleosala.piggyback.Database.DatabaseHelper;
 import ph.edu.addu.richardleosala.piggyback.Routing.CheckWifi;
@@ -336,7 +338,7 @@ public class MainActivity extends AppCompatActivity {
                                                 }
                                             }, 500);
                                         }
-                                    }, 2000);
+                                    }, 7000);
 
                                     //sendReceive.write(msg.getBytes());
                                     //Toast.makeText(MainActivity.this, msg.getBytes().toString(), Toast.LENGTH_SHORT).show();
@@ -345,41 +347,58 @@ public class MainActivity extends AppCompatActivity {
                             break;
                         }
                     }
-                    if(lapse == 0){
+                    //Send to first available peer
+                    if(lapse == 0 || recipient.getText().toString().length() == 0){
                         /**Broadcasting Code doing it manually**/
                         if(deviceNameArray.length > 0){
                             String tempmsg = writeMsg.getText().toString()+"#-#"+recipient.getText().toString()+"#-#"+trueDevName+"#-#";
                             for(int i = 0; i <deviceNameArray.length; i++){ tempmsg += deviceNameArray[i]; }
                             //for(int i = 0; i <deviceNameArray.length; i++){ mConnect(i); }
-                            final String finalMsg = tempmsg;
-                            final String msg = tempmsg;
-                            for (int i = 1; i < deviceNameArray.length; i++){
-                                Handler handler = new Handler();
-                                final int j = i;
-                                mConnect(j);
-                                handler.postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        sendReceive.write(msg.getBytes());
-                                        final String msg = finalMsg;
-                                        Handler handler1 = new Handler();
-                                        handler1.postDelayed(new Runnable() {
+                            //int n = 0;
+                            int k = 0;
+                            mConnect(k);
+                            final String fMsg = tempmsg;
+                            Handler handler = new Handler(getMainLooper());
+                            handler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    sendReceive.write(fMsg.getBytes());
+                                    Handler handler1 = new Handler(Looper.getMainLooper());
+                                    handler1.postDelayed(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            disconnect();
+                                        }
+                                    },500);
+                                }
+                            },7000);
+
+                            final Timer timer = new Timer();
+                            timer.scheduleAtFixedRate(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    int i = 1;
+                                    if(i < deviceNameArray.length){
+                                        mConnect(i);
+                                        Handler handler = new Handler(getMainLooper());
+                                        handler.postDelayed(new Runnable() {
                                             @Override
                                             public void run() {
-                                                Handler handler2 = new Handler();
-                                                writeMsg.setText("");
-                                                handler2.postDelayed(new Runnable() {
+                                                sendReceive.write(fMsg.getBytes());
+                                                Handler handler1 = new Handler(Looper.getMainLooper());
+                                                handler1.postDelayed(new Runnable() {
                                                     @Override
                                                     public void run() {
                                                         disconnect();
                                                     }
-                                                }, 500);
+                                                },500);
                                             }
-                                        },3000);
-
+                                        },7000);
+                                    }else{
+                                        timer.cancel();
                                     }
-                                }, 10000);
-                            }
+                                }
+                            },8000,8000);
                         }
                     }
                 }
